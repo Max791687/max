@@ -11,7 +11,7 @@
 </style>
 <meta name="description" content="PAVORA AI CONTROL iPhone hand-gesture demo"></head><body>
 <main>
-<header><i>P</i><div><b>PAVORA AI CONTROL</b><div class="muted" style="font-size:12px">iPhone · Gesture Lab v0.3</div></div><span class="tag" style="margin-left:auto">BETA</span></header>
+<header><i>P</i><div><b>PAVORA AI CONTROL</b><div class="muted" style="font-size:12px">iPhone · Gesture Lab v0.4</div></div><span class="tag" style="margin-left:auto">BETA</span></header>
 <h1>Control with your hand.</h1><p class="muted">Use the iPhone front camera to navigate this demo without touching the screen. Works <b>inside this webpage only</b>, not across other iPhone apps.</p>
 <section class="panel">
 <div class="camera"><video id="video" playsinline autoplay muted aria-label="Front camera preview"></video><canvas id="overlay" aria-hidden="true"></canvas><div id="placeholder" class="placeholder">📷<p>Camera is off. Tap Start Camera to begin.</p></div></div>
@@ -27,9 +27,9 @@
 <h2 id="voiceTitle" style="font-size:19px;margin:0 0 8px">🎙️ Voice & Commands <span class="tag">Phase 2</span></h2>
 <p class="tips">Try “next”, “previous”, “select”, “search cats”, “open youtube”, or “maps New Delhi”. Voice recognition depends on your browser; iPhone keyboard dictation is the fallback. You can always type, or use the iPhone keyboard microphone.</p>
 <div class="commandbox"><input id="command" type="text" autocomplete="off" aria-label="Command" placeholder="Type or dictate a command"><button id="listen" class="secondary" type="button">🎤 Speak</button></div>
-<p class="note" id="voiceSupport" aria-live="polite">Checking voice support...</p><div class="actions"><button id="execute" type="button">Run Command</button><button id="commandHelp" class="secondary" type="button">Help</button></div>
+<label class="note" for="voiceLanguage">Voice language</label> <select id="voiceLanguage" style="background:#101a33;color:#fff;border:1px solid #435475;border-radius:8px;padding:8px"><option value="en-IN">English (India)</option><option value="hi-IN">Hindi (India)</option><option value="en-US">English (US)</option></select><p class="note" id="voiceSupport" aria-live="polite">Checking voice support...</p><div class="actions"><button id="execute" type="button">Run Command</button><button id="commandHelp" class="secondary" type="button">Help</button></div>
 <div class="commands"><button data-command="next">Next card</button><button data-command="previous">Previous card</button><button data-command="open youtube">YouTube</button><button data-command="status">Status</button></div>
-<div class="result" id="commandResult" role="status" aria-live="polite">Ready for your command.</div>
+<p class="note" id="micState" aria-live="polite">Mic idle</p><div class="result" id="commandResult" role="status" aria-live="polite">Ready for your command.</div>
 <p class="note">External sites open only when you tap the generated link. Voice transcripts are never sent to our server; browser speech recognition services, if available, may process audio remotely.</p>
 </section>
 <section class="panel" aria-labelledby="shortcutTitle">
@@ -139,36 +139,85 @@ commandInput.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault
 document.querySelectorAll("[data-command]").forEach(b=>b.addEventListener("click",()=>{commandInput.value=b.dataset.command;executeCommand(commandInput.value)}));
 const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 const listen=el("listen");
+const support=el("voiceSupport");
+const micState=el("micState");
+const lang=el("voiceLanguage");
+let recognition=null;
 const testBtn=document.createElement("button");
 testBtn.className="secondary";testBtn.type="button";testBtn.textContent="Run self-check";
 testBtn.onclick=()=>{
- const required=["video","start","next","command","execute","listen","shortcutName","launchShortcut"];
+ const required=["video","start","next","command","execute","listen","voiceLanguage","shortcutName","launchShortcut"];
  const missing=required.filter(id=>!el(id));
- message(missing.length?"UI issue: missing "+missing.join(","):"✅ Interface controls are ready. Camera and microphone hardware must be tested on your iPhone. Version 0.3.");
+ const secure=window.isSecureContext;
+ const info="PAVORA v0.4 | HTTPS: "+(secure?"yes":"no")+" | Speech API: "+(Recognition?"detected":"unavailable")+" | Camera: "+(active?"on":"off");
+ message(missing.length?"UI issue: missing "+missing.join(",")+"; "+info:"✅ UI ready. "+info+". This check does not test actual microphone audio.");
 };
 el("commandHelp").parentElement.append(testBtn);
-if(!Recognition){
- el("voiceSupport").textContent="Safari live speech recognition not available here. Tap 🎤 to open keyboard; use the iPhone keyboard microphone or type.";
+function keyboardFallback(reason){
+ support.textContent=reason+" Use iPhone keyboard dictation: tap the text field, then the mic key on the iOS keyboard.";
  listen.textContent="⌨️ Dictate / Type";
  listen.disabled=false;
  listen.onclick=()=>{
-   commandInput.focus();
-   commandInput.scrollIntoView({behavior:"smooth",block:"center"});
-   message("Use the microphone on your iPhone keyboard to dictate. Then press Run Command.");
+  commandInput.focus();
+  commandInput.scrollIntoView({behavior:"smooth",block:"center"});
+  micState.textContent="Keyboard ready. Tap the iPhone keyboard microphone, speak, then tap Run Command.";
  };
+}
+function resetSpeechUI(){
+ recognition=null;
+ listen.textContent="🎤 Speak";
+ micState.textContent="Mic idle";
+}
+if(!Recognition){
+ keyboardFallback("This browser does not expose working live speech recognition.");
+ micState.textContent="Browser live speech unavailable";
 }else{
- el("voiceSupport").textContent="Live speech recognition detected. Tap Speak, allow microphone, then tap Run Command after recognition.";
- let recognition=null;
+ support.textContent="Tap Speak and allow microphone access. Recognized commands execute automatically; external links always require another tap.";
  listen.onclick=()=>{
-   if(recognition){recognition.stop();return}
-   try{
-     recognition=new Recognition();recognition.lang=navigator.language||"en-IN";recognition.interimResults=false;recognition.maxAlternatives=1;
-     listen.textContent="Stop listening";message("Listening… Speak a command.");
-     recognition.onresult=e=>{commandInput.value=e.results[0][0].transcript;message("Heard: "+commandInput.value+". Tap Run Command to execute.")};
-     recognition.onerror=e=>message("Microphone recognition: "+e.error+". You can type or use keyboard dictation.");
-     recognition.onend=()=>{recognition=null;listen.textContent="🎤 Speak"};
-     recognition.start();
-   }catch(e){recognition=null;listen.textContent="🎤 Speak";message("Speech unavailable: "+e.message)}
+  if(recognition){try{recognition.stop()}catch(e){};return}
+  if(!window.isSecureContext){message("Microphone requires HTTPS.");return}
+  let rec;
+  try{
+   rec=new Recognition();
+   rec.lang=lang.value;
+   rec.interimResults=false;
+   rec.continuous=false;
+   rec.maxAlternatives=1;
+   recognition=rec;
+   listen.textContent="■ Stop";
+   micState.textContent="Starting microphone…";
+   rec.onstart=()=>{micState.textContent="🎙️ Listening now. Say: next, previous, select, or search cats."};
+   rec.onaudiostart=()=>{micState.textContent="🎙️ Microphone capturing audio…"};
+   rec.onspeechstart=()=>{micState.textContent="🗣️ Speech detected…"};
+   rec.onresult=ev=>{
+    const transcript=ev.results?.[0]?.[0]?.transcript?.trim();
+    if(!transcript){message("No words recognized. Try again.");return}
+    commandInput.value=transcript;
+    micState.textContent="Heard: "+transcript;
+    executeCommand(transcript);
+   };
+   rec.onnomatch=()=>message("Could not understand that command. Try speaking more clearly.");
+   rec.onerror=ev=>{
+    const err=ev.error||"unknown";
+    const tip={
+     "not-allowed":"Microphone permission denied. Check Safari website microphone permissions, then retry.",
+     "service-not-allowed":"Speech service blocked. Use iPhone keyboard dictation instead.",
+     "audio-capture":"No microphone available. Check iPhone permissions.",
+     "no-speech":"No speech heard. Move closer and try again.",
+     "network":"Speech recognition service network error. Try keyboard dictation.",
+     "language-not-supported":"Chosen language unavailable. Try English (India)."
+    }[err]||"Try keyboard dictation or change language.";
+    message("Voice error ("+err+"): "+tip);
+    micState.textContent="Voice error: "+err;
+   };
+   rec.onend=()=>{
+    if(recognition===rec){recognition=null;listen.textContent="🎤 Speak"; if(micState.textContent==="Starting microphone…"||micState.textContent.startsWith("🎙️"))micState.textContent="Mic stopped. Try again if nothing was heard.";}
+   };
+   rec.start();
+  }catch(e){
+   resetSpeechUI();
+   message("Safari speech startup failed: "+e.message+". Use iPhone keyboard dictation or try again.");
+  }
  };
 }
 el("launchShortcut").onclick=()=>{
