@@ -11,7 +11,7 @@
 </style>
 <meta name="description" content="PAVORA AI CONTROL iPhone hand-gesture demo"></head><body>
 <main>
-<header><i>P</i><div><b>PAVORA AI CONTROL</b><div class="muted" style="font-size:12px">iPhone · Gesture Lab v0.5</div></div><span class="tag" style="margin-left:auto">BETA</span></header>
+<header><i>P</i><div><b>PAVORA AI CONTROL</b><div class="muted" style="font-size:12px">iPhone · Gesture Lab v0.6</div></div><span class="tag" style="margin-left:auto">BETA</span></header>
 <h1>Control with your hand.</h1><p class="muted">Use the iPhone front camera to navigate this demo without touching the screen. Works <b>inside this webpage only</b>, not across other iPhone apps.</p>
 <section class="panel">
 <div class="camera"><video id="video" playsinline autoplay muted aria-label="Front camera preview"></video><canvas id="overlay" aria-hidden="true"></canvas><div id="placeholder" class="placeholder">📷<p>Camera is off. Tap Start Camera to begin.</p></div></div>
@@ -158,13 +158,14 @@ commandInput.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault
 document.querySelectorAll("[data-command]").forEach(b=>b.addEventListener("click",()=>{commandInput.value=b.dataset.command;executeCommand(commandInput.value)}));
 const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 const listen=el("listen"),support=el("voiceSupport"),micState=el("micState"),lang=el("voiceLanguage");
-let recognition=null, wantsListening=false, stopRequested=false, restartCount=0, seenResultKeys=new Set(), speechFailure=false;
+let recognition=null, wantsListening=false, stopRequested=false, restartCount=0, speechFailure=false;
+let liveResults=new Map();
 const testBtn=document.createElement("button");
 testBtn.className="secondary";testBtn.type="button";testBtn.textContent="Run self-check";
 testBtn.onclick=()=>{
  const needed=["video","start","next","command","execute","listen","voiceLanguage","shortcutName","launchShortcut"];
  const missing=needed.filter(id=>!el(id));
- message((missing.length?"Missing: "+missing.join(", "):"✅ Controls loaded")+" | v0.5 | HTTPS: "+window.isSecureContext+" | Web Speech: "+!!Recognition+" | Active: "+wantsListening);
+ message((missing.length?"Missing: "+missing.join(", "):"✅ Controls loaded")+" | v0.6 | HTTPS: "+window.isSecureContext+" | Web Speech: "+!!Recognition+" | Active: "+wantsListening);
 };
 el("commandHelp").parentElement.append(testBtn);
 function fallback(reason){
@@ -181,24 +182,42 @@ function startSpeech(){
  if(!wantsListening||!Recognition)return;
  try{
   const rec=new Recognition();recognition=rec;
-  rec.lang=lang.value;rec.interimResults=false;
+  rec.lang=lang.value;rec.interimResults=true;
   rec.continuous=true;rec.maxAlternatives=1;
-  seenResultKeys=new Set();
+  liveResults=new Map();
   listen.textContent="■ Stop Listening";
   micState.textContent="🎙️ Starting listener…";
   rec.onstart=()=>{micState.textContent="🎙️ Listening — speak normally and pause slightly between commands."};
   rec.onaudiostart=()=>{micState.textContent="🎙️ Microphone active. Say next / next next."};
   rec.onspeechstart=()=>{micState.textContent="🗣️ Hearing speech…"};
+  // Run navigation words immediately from interim recognition; never replay them at finalization.
+  // Each speech result index tracks how many navigation words were already applied.
   rec.onresult=e=>{
    for(let i=e.resultIndex;i<e.results.length;i++){
-    const result=e.results[i];if(!result.isFinal)continue;
-    const phrase=result[0]?.transcript?.trim();
-    const key=i+":"+phrase;
-    if(!phrase||seenResultKeys.has(key))continue;
-    seenResultKeys.add(key);
+    const result=e.results[i],phrase=result[0]?.transcript?.trim();
+    if(!phrase)continue;
+    const state=liveResults.get(i)||{applied:0,final:false,other:false};
+    if(state.final)continue;
     commandInput.value=phrase;
-    executeCommand(phrase);
-    micState.textContent="✅ Heard: "+phrase+" — still listening";
+    const tokens=phrase.toLowerCase().replace(/[.,!?]+/g," ").trim().split(/\s+/);
+    const moves=tokens.filter(word=>["next","previous","back","aage","piche","peeche","agla","नेक्स्ट","अगला","पिछला","पीछे"].includes(word));
+    const onlyMoves=tokens.length>0 && tokens.every(word=>moves.includes(word)||["card","and","then","aur","फिर"].includes(word));
+    if(onlyMoves){
+     const count=Math.min(8,moves.length);
+     // Interim revisions may shorten text: do not undo earlier actions on a hypothesis change.
+     for(let n=state.applied;n<count;n++)executeSingle(moves[n]);
+     state.applied=Math.max(state.applied,count);
+     micState.textContent="⚡ Live: "+state.applied+" move(s) — "+phrase;
+    }else if(result.isFinal&&!state.other){
+     // Non-navigation commands wait for final recognition to avoid accidental external actions.
+     executeCommand(phrase);
+     state.other=true;
+     micState.textContent="✅ Heard: "+phrase+" — still listening";
+    }else{
+     micState.textContent="🎙️ Hearing: "+phrase;
+    }
+    if(result.isFinal)state.final=true;
+    liveResults.set(i,state);
    }
   };
   rec.onnomatch=()=>{micState.textContent="Could not recognize words. Try again, without shouting.";};
@@ -240,7 +259,7 @@ if(!Recognition){
  fallback("Safari has no live SpeechRecognition API.");
  micState.textContent="Live voice unavailable on this browser";
 }else{
- support.textContent="Tap Start Listening once, say commands normally. Safari may stop microphone sessions automatically; tap again if needed. Speak near the iPhone mic, not loudly.";
+ support.textContent="Tap Start Listening once; Next/Previous now react to interim words, without waiting for the final sentence. Safari may stop microphone sessions automatically; tap again if needed. Speak near the iPhone mic, not loudly.";
  listen.textContent="🎤 Start Listening";
  listen.onclick=()=>{
   if(wantsListening){
