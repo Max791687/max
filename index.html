@@ -6,10 +6,12 @@
 <title>PAVORA AI CONTROL | iPhone</title>
 <style>
 :root{font-family:system-ui,-apple-system,sans-serif;color:#eef4ff;background:#080d1d}*{box-sizing:border-box}body{margin:0;min-height:100dvh;background:radial-gradient(circle at 75% 0,#263a71 0,transparent 42%),#080d1d}main{max-width:590px;margin:auto;padding:24px 17px 60px}header{display:flex;align-items:center;gap:12px}header i{width:38px;height:38px;border-radius:13px;background:linear-gradient(145deg,#7173ff,#36e5cf);display:grid;place-items:center;font-style:normal;font-weight:900;color:#10142b}.muted{color:#a4b2d4}h1{font-size:27px;margin:28px 0 7px}p{line-height:1.5}.tag{background:#182748;border:1px solid #30436a;color:#8eeadd;border-radius:99px;padding:5px 11px;font-size:12px}.panel{border:1px solid #344567;background:#101a33;border-radius:20px;padding:17px;margin-top:19px;box-shadow:0 14px 35px #0003}.camera{position:relative;background:#050a17;border-radius:14px;overflow:hidden;aspect-ratio:4/3;display:grid;place-items:center}.camera video,.camera canvas{position:absolute;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}.camera canvas{transform:none;pointer-events:none}.camera .placeholder{color:#8f9bb8;text-align:center;padding:25px}button{border:0;border-radius:13px;background:#696eff;color:#fff;padding:15px 18px;font-size:15px;font-weight:700;cursor:pointer}button.secondary{background:#263553}button:disabled{opacity:.4}button:focus-visible{outline:3px solid #b9e5ff}.actions{display:flex;gap:10px;margin-top:15px}.actions button{flex:1}.status{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:11px 0 0;font-size:14px}.dot{height:9px;width:9px;border-radius:50%;background:#faad4c;display:inline-block;margin-right:6px}.active .dot{background:#50dfbb}.deck{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:165px}.tile{padding:20px 15px;border-radius:16px;background:linear-gradient(140deg,#293f83,#17274b);width:100%;text-align:center;min-height:145px;border:2px solid #4964ad}.tile.selected{border-color:#4df2c0;box-shadow:0 0 0 3px #4df2c022}.emoji{font-size:38px}.tile strong{display:block;margin:8px 0 3px}.nav{padding:10px 13px;background:#263553}.tips{font-size:14px;color:#bbc6dd}.tips b{color:#fff}#pointer{position:fixed;z-index:20;width:20px;height:20px;border:2px solid #79f8e3;border-radius:50%;background:#54fbe63d;transform:translate(-50%,-50%);pointer-events:none;display:none;box-shadow:0 0 15px #64eada}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}.warn{color:#ffcb7a}
+
+.commandbox{display:flex;gap:8px;margin:12px 0}.commandbox input,.shortcutbox input{min-width:0;flex:1;padding:13px 11px;border-radius:11px;border:1px solid #435475;background:#0a1429;color:white;font-size:16px}.commandbox button{padding:12px}.commands{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.commands button{padding:9px 11px;border:1px solid #455578;background:#263553;font-size:13px}.shortcutbox{display:flex;gap:8px;margin-top:12px}.shortcutbox button{padding:10px}.result{background:#081124;padding:12px;border-radius:11px;line-height:1.5;font-size:14px;margin-top:12px;min-height:43px}.result a{color:#90eada;font-weight:700;display:inline-block;margin-top:8px}.note{color:#b9c5de;font-size:12px}
 </style>
 <meta name="description" content="PAVORA AI CONTROL iPhone hand-gesture demo"></head><body>
 <main>
-<header><i>P</i><div><b>PAVORA AI CONTROL</b><div class="muted" style="font-size:12px">iPhone · Gesture Lab v0.1</div></div><span class="tag" style="margin-left:auto">BETA</span></header>
+<header><i>P</i><div><b>PAVORA AI CONTROL</b><div class="muted" style="font-size:12px">iPhone · Gesture Lab v0.2</div></div><span class="tag" style="margin-left:auto">BETA</span></header>
 <h1>Control with your hand.</h1><p class="muted">Use the iPhone front camera to navigate this demo without touching the screen. Works <b>inside this webpage only</b>, not across other iPhone apps.</p>
 <section class="panel">
 <div class="camera"><video id="video" playsinline autoplay muted aria-label="Front camera preview"></video><canvas id="overlay" aria-hidden="true"></canvas><div id="placeholder" class="placeholder">📷<p>Camera is off. Tap Start Camera to begin.</p></div></div>
@@ -20,6 +22,22 @@
 <div class="deck"><button class="nav" id="prev" aria-label="Previous card">‹</button><div class="tile" id="tile"><div class="emoji" id="emoji">✨</div><strong id="heading">Discover</strong><span id="description" class="muted">Move your open hand sideways to switch cards</span></div><button class="nav" id="next" aria-label="Next card">›</button></div>
 <p class="tips" id="selected">Pinch thumb + index finger to select the current card.</p></section>
 <section class="panel"><b>Gestures</b><p class="tips">👋 <b>Open hand + swipe left/right:</b> change cards<br>🤏 <b>Thumb + index pinch:</b> select card<br>✋ <b>Hold open palm still:</b> ready to navigate</p><p class="tips">Keep your hand 25–70 cm from the front camera in good light. Press Stop to disable tracking. Processing is local after the model downloads; no video is uploaded by this app.</p><p class="tips warn">Camera permission and an HTTPS website are required. No background tracking. This is a demo, not full iOS system control.</p></section>
+
+<section class="panel" aria-labelledby="voiceTitle">
+<h2 id="voiceTitle" style="font-size:19px;margin:0 0 8px">🎙️ Voice & Commands <span class="tag">Phase 2</span></h2>
+<p class="tips">Try “next”, “previous”, “select”, “search cats”, “open youtube”, or “maps New Delhi”. Voice recognition depends on your browser. You can always type, or use the iPhone keyboard microphone.</p>
+<div class="commandbox"><input id="command" type="text" autocomplete="off" aria-label="Command" placeholder="Type or dictate a command"><button id="listen" class="secondary" type="button">🎤 Speak</button></div>
+<div class="actions"><button id="execute" type="button">Run Command</button><button id="commandHelp" class="secondary" type="button">Help</button></div>
+<div class="commands"><button data-command="next">Next card</button><button data-command="previous">Previous card</button><button data-command="open youtube">YouTube</button><button data-command="status">Status</button></div>
+<div class="result" id="commandResult" role="status" aria-live="polite">Ready for your command.</div>
+<p class="note">External sites open only when you tap the generated link. Voice transcripts are never sent to our server; browser speech recognition services, if available, may process audio remotely.</p>
+</section>
+<section class="panel" aria-labelledby="shortcutTitle">
+<h2 id="shortcutTitle" style="font-size:19px;margin:0 0 8px">⚡ Apple Shortcuts</h2>
+<p class="tips">Create a shortcut on your iPhone in Apple's Shortcuts app first. Enter its exact name here, then tap Launch. iOS will handle the permission and confirmation.</p>
+<div class="shortcutbox"><input id="shortcutName" type="text" aria-label="Existing Apple Shortcut name" placeholder="My existing shortcut"><button id="launchShortcut" type="button">Launch</button></div>
+<div class="result" id="shortcutResult" role="status" aria-live="polite">Only shortcuts you installed can run. Nothing runs automatically.</div>
+</section>
 </main><div id="pointer" aria-hidden="true"></div>
 <script type="module">
 const el=id=>document.getElementById(id);
@@ -91,6 +109,63 @@ el("start").onclick=async()=>{
 };
 document.addEventListener("visibilitychange",()=>{if(document.hidden&&active)stop()});
 window.addEventListener("pagehide",stop);
+
+/* Phase 2: deterministic commands, explicit user actions, no secret access. */
+const commandInput=el("command"),commandResult=el("commandResult");
+function message(text){commandResult.textContent=text}
+function offerLink(label,url){
+  commandResult.replaceChildren();
+  const p=document.createElement("span");p.textContent="Ready: "+label+". ";
+  const a=document.createElement("a");a.href=url;a.rel="noopener noreferrer";a.target="_blank";a.textContent="Tap to open";
+  commandResult.append(p,a);
+}
+function executeCommand(raw){
+  const input=raw.trim(),cmd=input.toLowerCase();
+  if(!cmd){message("Enter a command first.");return}
+  if(["next","next card","aage"].includes(cmd)){change(1);message("Moved to next card.");return}
+  if(["previous","previous card","back","piche"].includes(cmd)){change(-1);message("Moved to previous card.");return}
+  if(["select","select card","choose"].includes(cmd)){selected=!selected;render();message("Card selection changed.");return}
+  if(cmd==="status"){message("Gesture camera: "+(active?"on":"off")+". Current card: "+cards[index][1]+".");return}
+  if(cmd==="help"){message("Commands: next, previous, select, status, open youtube, open google, search [words], maps [place].");return}
+  if(cmd==="open youtube"||cmd==="youtube"){offerLink("YouTube","https://www.youtube.com/");return}
+  if(cmd==="open google"||cmd==="google"){offerLink("Google","https://www.google.com/");return}
+  if(cmd.startsWith("search ")&&input.slice(7).trim()){offerLink("Google search", "https://www.google.com/search?q="+encodeURIComponent(input.slice(7).trim()));return}
+  if(cmd.startsWith("maps ")&&input.slice(5).trim()){offerLink("Maps", "https://maps.apple.com/?q="+encodeURIComponent(input.slice(5).trim()));return}
+  message("Command not recognized. Tap Help for supported examples.");
+}
+el("execute").onclick=()=>executeCommand(commandInput.value);
+el("commandHelp").onclick=()=>executeCommand("help");
+commandInput.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();executeCommand(commandInput.value)}});
+document.querySelectorAll("[data-command]").forEach(b=>b.addEventListener("click",()=>{commandInput.value=b.dataset.command;executeCommand(commandInput.value)}));
+const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+const listen=el("listen");
+if(!Recognition){
+ listen.textContent="Use keyboard 🎤";listen.disabled=true;
+ listen.title="SpeechRecognition is unavailable in this browser. Tap the command input and use iPhone keyboard dictation.";
+}else{
+ let recognition=null;
+ listen.onclick=()=>{
+   if(recognition){recognition.stop();return}
+   try{
+     recognition=new Recognition();recognition.lang=navigator.language||"en-IN";recognition.interimResults=false;recognition.maxAlternatives=1;
+     listen.textContent="Stop listening";message("Listening… Speak a command.");
+     recognition.onresult=e=>{commandInput.value=e.results[0][0].transcript;message("Heard: "+commandInput.value+". Tap Run Command to execute.")};
+     recognition.onerror=e=>message("Microphone recognition: "+e.error+". You can type or use keyboard dictation.");
+     recognition.onend=()=>{recognition=null;listen.textContent="🎤 Speak"};
+     recognition.start();
+   }catch(e){recognition=null;listen.textContent="🎤 Speak";message("Speech unavailable: "+e.message)}
+ };
+}
+el("launchShortcut").onclick=()=>{
+ const name=el("shortcutName").value.trim();
+ const result=el("shortcutResult");
+ result.replaceChildren();
+ if(!name){result.textContent="Enter the exact name of an existing Apple Shortcut.";return}
+ const p=document.createElement("span");p.textContent="Opening Apple Shortcuts for “"+name+"”. ";
+ const a=document.createElement("a");a.href="shortcuts://run-shortcut?name="+encodeURIComponent(name);a.textContent="Tap to run shortcut";
+ result.append(p,a);
+};
+
 render();
 </script>
 </body></html>
