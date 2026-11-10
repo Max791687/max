@@ -11,7 +11,7 @@
 </style>
 <meta name="description" content="PAVORA AI CONTROL iPhone hand-gesture demo"></head><body>
 <main>
-<header><i>P</i><div><b>PAVORA AI CONTROL</b><div class="muted" style="font-size:12px">iPhone · Gesture Lab v0.2</div></div><span class="tag" style="margin-left:auto">BETA</span></header>
+<header><i>P</i><div><b>PAVORA AI CONTROL</b><div class="muted" style="font-size:12px">iPhone · Gesture Lab v0.3</div></div><span class="tag" style="margin-left:auto">BETA</span></header>
 <h1>Control with your hand.</h1><p class="muted">Use the iPhone front camera to navigate this demo without touching the screen. Works <b>inside this webpage only</b>, not across other iPhone apps.</p>
 <section class="panel">
 <div class="camera"><video id="video" playsinline autoplay muted aria-label="Front camera preview"></video><canvas id="overlay" aria-hidden="true"></canvas><div id="placeholder" class="placeholder">📷<p>Camera is off. Tap Start Camera to begin.</p></div></div>
@@ -25,9 +25,9 @@
 
 <section class="panel" aria-labelledby="voiceTitle">
 <h2 id="voiceTitle" style="font-size:19px;margin:0 0 8px">🎙️ Voice & Commands <span class="tag">Phase 2</span></h2>
-<p class="tips">Try “next”, “previous”, “select”, “search cats”, “open youtube”, or “maps New Delhi”. Voice recognition depends on your browser. You can always type, or use the iPhone keyboard microphone.</p>
+<p class="tips">Try “next”, “previous”, “select”, “search cats”, “open youtube”, or “maps New Delhi”. Voice recognition depends on your browser; iPhone keyboard dictation is the fallback. You can always type, or use the iPhone keyboard microphone.</p>
 <div class="commandbox"><input id="command" type="text" autocomplete="off" aria-label="Command" placeholder="Type or dictate a command"><button id="listen" class="secondary" type="button">🎤 Speak</button></div>
-<div class="actions"><button id="execute" type="button">Run Command</button><button id="commandHelp" class="secondary" type="button">Help</button></div>
+<p class="note" id="voiceSupport" aria-live="polite">Checking voice support...</p><div class="actions"><button id="execute" type="button">Run Command</button><button id="commandHelp" class="secondary" type="button">Help</button></div>
 <div class="commands"><button data-command="next">Next card</button><button data-command="previous">Previous card</button><button data-command="open youtube">YouTube</button><button data-command="status">Status</button></div>
 <div class="result" id="commandResult" role="status" aria-live="polite">Ready for your command.</div>
 <p class="note">External sites open only when you tap the generated link. Voice transcripts are never sent to our server; browser speech recognition services, if available, may process audio remotely.</p>
@@ -139,10 +139,25 @@ commandInput.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault
 document.querySelectorAll("[data-command]").forEach(b=>b.addEventListener("click",()=>{commandInput.value=b.dataset.command;executeCommand(commandInput.value)}));
 const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 const listen=el("listen");
+const testBtn=document.createElement("button");
+testBtn.className="secondary";testBtn.type="button";testBtn.textContent="Run self-check";
+testBtn.onclick=()=>{
+ const required=["video","start","next","command","execute","listen","shortcutName","launchShortcut"];
+ const missing=required.filter(id=>!el(id));
+ message(missing.length?"UI issue: missing "+missing.join(","):"✅ Interface controls are ready. Camera and microphone hardware must be tested on your iPhone. Version 0.3.");
+};
+el("commandHelp").parentElement.append(testBtn);
 if(!Recognition){
- listen.textContent="Use keyboard 🎤";listen.disabled=true;
- listen.title="SpeechRecognition is unavailable in this browser. Tap the command input and use iPhone keyboard dictation.";
+ el("voiceSupport").textContent="Safari live speech recognition not available here. Tap 🎤 to open keyboard; use the iPhone keyboard microphone or type.";
+ listen.textContent="⌨️ Dictate / Type";
+ listen.disabled=false;
+ listen.onclick=()=>{
+   commandInput.focus();
+   commandInput.scrollIntoView({behavior:"smooth",block:"center"});
+   message("Use the microphone on your iPhone keyboard to dictate. Then press Run Command.");
+ };
 }else{
+ el("voiceSupport").textContent="Live speech recognition detected. Tap Speak, allow microphone, then tap Run Command after recognition.";
  let recognition=null;
  listen.onclick=()=>{
    if(recognition){recognition.stop();return}
