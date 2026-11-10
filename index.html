@@ -11,7 +11,7 @@
 </style>
 <meta name="description" content="PAVORA AI CONTROL iPhone hand-gesture demo"></head><body>
 <main>
-<header><i>P</i><div><b>PAVORA AI CONTROL</b><div class="muted" style="font-size:12px">iPhone · Gesture Lab v0.7</div></div><span class="tag" style="margin-left:auto">BETA</span></header>
+<header><i>P</i><div><b>PAVORA AI CONTROL</b><div class="muted" style="font-size:12px">iPhone · Gesture Lab v0.8</div></div><span class="tag" style="margin-left:auto">BETA</span></header>
 <h1>Control with your hand.</h1><p class="muted">Use the iPhone front camera to navigate this demo without touching the screen. Works <b>inside this webpage only</b>, not across other iPhone apps.</p>
 <section class="panel">
 <div class="camera"><video id="video" playsinline autoplay muted aria-label="Front camera preview"></video><canvas id="overlay" aria-hidden="true"></canvas><div id="placeholder" class="placeholder">📷<p>Camera is off. Tap Start Camera to begin.</p></div></div>
@@ -30,7 +30,7 @@
 <label class="note" for="voiceLanguage">Voice language</label> <select id="voiceLanguage" style="background:#101a33;color:#fff;border:1px solid #435475;border-radius:8px;padding:8px"><option value="en-IN">English (India)</option><option value="hi-IN">Hindi (India)</option><option value="en-US">English (US)</option></select><p class="note" id="voiceSupport" aria-live="polite">Checking voice support...</p><div class="actions"><button id="execute" type="button">Run Command</button><button id="commandHelp" class="secondary" type="button">Help</button></div>
 <div class="commands"><button data-command="next">Next card</button><button data-command="previous">Previous card</button><button data-command="open youtube">YouTube</button><button data-command="status">Status</button></div>
 <p class="note" id="micState" aria-live="polite">Mic idle</p><div class="result" id="commandResult" role="status" aria-live="polite">Ready for your command.</div>
-<p class="note">External sites open only when you tap the generated link. Voice transcripts are never sent to our server; browser speech recognition services, if available, may process audio remotely.</p>
+<p class="note">Supported external websites open in this same Safari tab after a recognized final voice command. The current app closes when you leave. Voice transcripts are never sent to our server; browser speech recognition services, if available, may process audio remotely.</p>
 </section>
 <section class="panel" aria-labelledby="shortcutTitle">
 <h2 id="shortcutTitle" style="font-size:19px;margin:0 0 8px">⚡ Apple Shortcuts</h2>
@@ -114,10 +114,14 @@ window.addEventListener("pagehide",stop);
 const commandInput=el("command"),commandResult=el("commandResult");
 function message(text){commandResult.textContent=text}
 function offerLink(label,url){
+  // Navigate in the SAME tab: window.open() often triggers popup blocking from async speech callbacks.
+  // Keep a manual link only as a fallback if Safari prevents navigation.
   commandResult.replaceChildren();
-  const p=document.createElement("span");p.textContent="Ready: "+label+". ";
-  const a=document.createElement("a");a.href=url;a.rel="noopener noreferrer";a.target="_blank";a.textContent="Tap to open";
+  const p=document.createElement("span");p.textContent="Opening "+label+"… ";
+  const a=document.createElement("a");a.href=url;a.rel="noopener noreferrer";a.textContent="Open manually if Safari blocks it";
   commandResult.append(p,a);
+  try { window.location.assign(url); }
+  catch(err){p.textContent="Safari blocked navigation: "+err.message+". ";}
 }
 function normalizedWords(raw){
  return raw.toLowerCase().normalize("NFKC").replace(/[.,!?।:;]+/g," ").replace(/\s+/g," ").trim();
@@ -148,11 +152,18 @@ function executeCommand(raw){
  const actions=navActions(cmd);
  if(actions){actions.forEach(performNav);message("✅ "+actions.join(" → "));return}
  if(["help","commands","मदद"].includes(cmd)){message("Commands: next, previous/back, select, status, open youtube, open google, search cats, maps Delhi.");return}
- if(/^(?:open |खोलो )?(?:youtube|you tube|यूट्यूब)(?: खोलो)?$/.test(cmd)){offerLink("YouTube","https://www.youtube.com/");return}
- if(/^(?:open |खोलो )?(?:google|गूगल)(?: खोलो)?$/.test(cmd)){offerLink("Google","https://www.google.com/");return}
- const search=cmd.match(/^(?:search|google search|सर्च|खोजो)\s+(.+)$/);
+ const cleaned=cmd.replace(/\b(please|can you|could you|hey|pavora|the|app|application|for me|now|jara|zara)\b/g," ").replace(/\s+/g," ").trim();
+ // Voice transcription varies: "you tube", "youtube kholo", "open the youtube app", etc.
+ if(/(?:^|\s)(?:youtube|you tube|यूट्यूब|युटुब)(?:\s|$)/.test(cleaned) &&
+    /(?:^|\s)(?:open|launch|start|kholo|khol|खोलो|चालू)(?:\s|$)/.test(cleaned+" open") ){
+   offerLink("YouTube","https://www.youtube.com/");return;
+ }
+ if(/^(?:(?:open|launch|start|kholo|खोलो)\s+)?(?:google|गूगल)(?:\s+(?:open|kholo|खोलो))?$/.test(cleaned)){
+   offerLink("Google","https://www.google.com/");return;
+ }
+ const search=cleaned.match(/^(?:search(?: for)?|google search|सर्च|खोजो)\s+(.+)$/);
  if(search){offerLink("Google search","https://www.google.com/search?q="+encodeURIComponent(search[1]));return}
- const maps=cmd.match(/^(?:maps|map|मैप|नक्शा)\s+(.+)$/);
+ const maps=cleaned.match(/^(?:maps|map|मैप|नक्शा)\s+(.+)$/);
  if(maps){offerLink("Apple Maps","https://maps.apple.com/?q="+encodeURIComponent(maps[1]));return}
  message("Heard: “"+input+"”. Not matched. Try “previous”, “select”, or “open youtube”.");
 }
@@ -169,7 +180,7 @@ testBtn.className="secondary";testBtn.type="button";testBtn.textContent="Run sel
 testBtn.onclick=()=>{
  const needed=["video","start","next","command","execute","listen","voiceLanguage","shortcutName","launchShortcut"];
  const missing=needed.filter(id=>!el(id));
- message((missing.length?"Missing: "+missing.join(", "):"✅ Controls loaded")+" | v0.7 | HTTPS: "+window.isSecureContext+" | Web Speech: "+!!Recognition+" | Active: "+wantsListening);
+ message((missing.length?"Missing: "+missing.join(", "):"✅ Controls loaded")+" | v0.8 | HTTPS: "+window.isSecureContext+" | Web Speech: "+!!Recognition+" | Active: "+wantsListening);
 };
 el("commandHelp").parentElement.append(testBtn);
 function fallback(reason){
