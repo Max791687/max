@@ -155,7 +155,7 @@ function executeCommand(raw){
  const cleaned=cmd.replace(/\b(please|can you|could you|hey|pavora|the|app|application|for me|now|jara|zara)\b/g," ").replace(/\s+/g," ").trim();
  // Voice transcription varies: "you tube", "youtube kholo", "open the youtube app", etc.
  if(/(?:^|\s)(?:youtube|you tube|यूट्यूब|युटुब)(?:\s|$)/.test(cleaned) &&
-    /(?:^|\s)(?:open|launch|start|kholo|khol|खोलो|चालू)(?:\s|$)/.test(cleaned+" open") ){
+    (/^(?:youtube|you tube|यूट्यूब|युटुब)$/.test(cleaned) || /(?:^|\s)(?:open|launch|start|kholo|khol|खोलो|चालू)(?:\s|$)/.test(cleaned))){
    offerLink("YouTube","https://www.youtube.com/");return;
  }
  if(/^(?:(?:open|launch|start|kholo|खोलो)\s+)?(?:google|गूगल)(?:\s+(?:open|kholo|खोलो))?$/.test(cleaned)){
